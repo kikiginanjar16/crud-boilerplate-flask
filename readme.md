@@ -9,7 +9,7 @@ A comprehensive Flask boilerplate for building REST APIs with CRUD operations, J
 - 👥 **Role-Based Access Control (RBAC)** - User roles and permissions system
 - 📚 **Clean Architecture** - Organized with models, routes, use cases, and schemas
 - 📖 **API Documentation** - Swagger/OpenAPI documentation with Flasgger
-- 🗄️ **Database Support** - SQLAlchemy with migration support
+- 🗄️ **Database Support** - PostgreSQL with SQLAlchemy and migration support
 - 🆔 **UUID Primary Keys** - Using UUIDs for better security and scalability
 - ⚡ **Environment Configuration** - Flexible configuration with .env files
 - 🛡️ **Error Handling** - Centralized error handling and security hooks
@@ -17,6 +17,7 @@ A comprehensive Flask boilerplate for building REST APIs with CRUD operations, J
 ## Tech Stack
 
 - **Framework**: Flask 3.0.3
+- **Database**: PostgreSQL
 - **Database ORM**: SQLAlchemy with Flask-SQLAlchemy
 - **Authentication**: Flask-JWT-Extended
 - **Serialization**: Marshmallow
@@ -67,6 +68,7 @@ crud-boilerplate-flask/
 ### Prerequisites
 
 - Python 3.8 or higher
+- PostgreSQL 12 or higher
 - pip (Python package installer)
 
 ### Setup
@@ -86,27 +88,45 @@ crud-boilerplate-flask/
 3. **Install dependencies**
    ```bash
    pip install -r requirements.txt
+   
+   # Install PostgreSQL adapter
+   pip install psycopg2-binary
    ```
 
-4. **Environment configuration**
+4. **Setup PostgreSQL database**
+   
+   Create a PostgreSQL database for your application:
+   ```bash
+   # Connect to PostgreSQL
+   psql -U postgres
+   
+   # Create database
+   CREATE DATABASE flask_crud_db;
+   
+   # Create user (optional)
+   CREATE USER flask_user WITH PASSWORD 'your_password';
+   GRANT ALL PRIVILEGES ON DATABASE flask_crud_db TO flask_user;
+   ```
+
+5. **Environment configuration**
    
    Create a `.env` file in the root directory:
    ```env
-   DATABASE_URL=sqlite:///app.db
+   DATABASE_URL=postgresql://username:password@localhost:5432/flask_crud_db
    JWT_SECRET_KEY=your-secret-key-here
    JWT_ACCESS_TOKEN_EXPIRES=3600
    JWT_REFRESH_TOKEN_EXPIRES=2592000
    PORT=5000
    ```
 
-5. **Initialize database**
+6. **Initialize database**
    ```bash
    flask db init
    flask db migrate -m "Initial migration"
    flask db upgrade
    ```
 
-6. **Run the application**
+7. **Run the application**
    ```bash
    python manage.py
    # or
@@ -255,7 +275,7 @@ The application supports the following environment variables:
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `DATABASE_URL` | `sqlite:///app.db` | Database connection string |
+| `DATABASE_URL` | `postgresql://user:pass@localhost/db` | PostgreSQL connection string |
 | `JWT_SECRET_KEY` | `change-me` | Secret key for JWT tokens |
 | `JWT_ACCESS_TOKEN_EXPIRES` | `3600` | Access token expiration (seconds) |
 | `JWT_REFRESH_TOKEN_EXPIRES` | `2592000` | Refresh token expiration (seconds) |
@@ -289,6 +309,34 @@ COPY . .
 EXPOSE 5000
 
 CMD ["gunicorn", "-w", "4", "-b", "0.0.0.0:5000", "wsgi:app"]
+```
+
+Create a `docker-compose.yml` for PostgreSQL:
+```yaml
+version: '3.8'
+services:
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: flask_crud_db
+      POSTGRES_USER: flask_user
+      POSTGRES_PASSWORD: your_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  app:
+    build: .
+    ports:
+      - "5000:5000"
+    depends_on:
+      - db
+    environment:
+      DATABASE_URL: postgresql://flask_user:your_password@db:5432/flask_crud_db
+
+volumes:
+  postgres_data:
 ```
 
 ## Contributing
